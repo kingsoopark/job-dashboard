@@ -88,6 +88,14 @@ form button{flex:0 0 auto}
 .xp{font-size:12px;font-weight:700;color:var(--c4);white-space:nowrap}
 .mini{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
 .mini i{display:block;height:100%;background:var(--accent)}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.pickbtn{padding:18px 8px;font-size:18px;font-weight:700;border-radius:14px;text-align:center}
+.pickbtn small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:4px}
+.pickbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--card))}
+details.avail{margin-top:8px}
+details.avail summary{cursor:pointer;font-weight:700;padding:6px 0}
+.mrow .pri{padding:4px 12px}
+@media(max-width:560px){.picks{grid-template-columns:1fr}}
 .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
 .bd{text-align:center;padding:10px 4px;border:1px solid var(--line);border-radius:12px;font-size:12px}
 .bd .ic{font-size:28px;display:block}
@@ -146,10 +154,20 @@ dialog input{width:100%;margin:8px 0;font-family:monospace}
       <div><b id="msd">0</b><span>완료 미션</span></div>
     </div>
   </div>
-  <div class="sec-title"><span class="dot" style="background:var(--c4)"></span><h2>미션</h2>
+  <div class="sec-title"><span class="dot" style="background:var(--c4)"></span><h2>내 미션</h2>
     <select id="role" style="margin-left:auto"></select></div>
   <div class="panel">
+    <div id="pick" hidden>
+      <h3>직무를 골라 미션을 받으세요</h3>
+      <div class="picks">
+        <button class="pickbtn" data-role="dev">💻 개발<small>엔진 구현·코테·깃허브</small></button>
+        <button class="pickbtn" data-role="plan">📝 기획<small>기획서·밸런스·역기획</small></button>
+        <button class="pickbtn" data-role="art">🎨 아트<small>작품·툴·스타일 분석</small></button>
+      </div>
+    </div>
+    <div id="mboard">
     <div id="missions"></div>
+    <details class="avail" open><summary>받을 수 있는 미션 <b id="availCnt">0</b>개</summary><div id="avail"></div></details>
     <form id="fMis">
       <input name="title" placeholder="새 미션 이름" required>
       <select name="cat"></select>
@@ -157,6 +175,7 @@ dialog input{width:100%;margin:8px 0;font-family:monospace}
       <input name="target" type="number" min="1" max="50" value="1" title="횟수">
       <button class="pri">+ 미션</button>
     </form>
+    </div>
   </div>
   <div class="sec-title"><span class="dot" style="background:var(--warn)"></span><h2>배지</h2><span class="hint" id="bcnt"></span></div>
   <div class="panel"><div class="badges" id="badges"></div></div>
@@ -308,9 +327,14 @@ const SETVER=2;
 function ensure(s){
   if(!s.sets)s.sets=mkSets();
   else if((s.setVer||1)<SETVER){const f=mkSets();["plan","art"].forEach(r=>{const cu=(s.sets[r]||[]).filter(m=>String(m.id).startsWith("c"));s.sets[r]=f[r].concat(cu)})}
-  s.setVer=SETVER;if(!s.role)s.role="dev";if(!s.earned)s.earned={};if(!s.prog)s.prog={};if(!s.act)s.act=[];return s}
+  s.setVer=SETVER;
+  if(!s.earned)s.earned={};if(!s.prog)s.prog={};
+  if(s.acc===undefined){s.acc={};
+    Object.keys(s.prog).forEach(k=>{if(s.prog[k]>0)s.acc[k.split("@")[0]]=1});
+    Object.keys(s.earned).forEach(k=>{s.acc[k.split("@")[0]]=1});
+    s.roleChosen=true}if(!s.role)s.role="dev";if(!s.earned)s.earned={};if(!s.prog)s.prog={};if(!s.act)s.act=[];return s}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.apps)return ensure(s)}catch(e){}
-  const s=sample();s.prog={"대표 프로젝트 3개 완성":1,"깃허브 정리":1,"이력서·자소서 작성":1,"모의면접 3회":2};s.act=[0,1,2,3].map(i=>addDays(-i));return ensure(s)}
+  const s=sample();s.roleChosen=true;s.acc={};["대표 프로젝트 3개 완성","깃허브 정리","이력서·자소서 작성","모의면접 3회","코테 주 5시간","게임회사 5곳 목록 만들기","주 3곳 지원","엔진(Unity/Unreal) 기능 구현"].forEach(t=>s.acc[t]=1);s.prog={"대표 프로젝트 3개 완성":1,"깃허브 정리":1,"이력서·자소서 작성":1,"모의면접 3회":2};s.act=[0,1,2,3].map(i=>addDays(-i));return ensure(s)}
 let S=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function getTheme(){try{return localStorage.getItem(TKEY)}catch(e){return null}}
@@ -328,8 +352,9 @@ function autoVal(m){const wk=wkStart();
 const pk=m=>m.weekly?m.title+"@"+fmt(wkStart()):m.title;
 function mstate(m){const val=m.auto?autoVal(m):(S.prog[pk(m)]||0);return {val,target:m.target,done:val>=m.target}}
 const mkey=m=>m.weekly?m.title+"@"+fmt(wkStart()):m.title;
+const isAcc=m=>!!S.acc[m.title];
 function reconcile(){const gained=[];
-  curSet().forEach(m=>{const st=mstate(m),k=mkey(m);
+  curSet().filter(isAcc).forEach(m=>{const st=mstate(m),k=mkey(m);
     if(st.done){if(!S.earned[k]){S.earned[k]={xp:m.xp,t:fmt(today())};gained.push(m)}}
     else if(!m.auto&&S.earned[k])delete S.earned[k]});
   return gained}
@@ -350,15 +375,26 @@ function renderBoard(){
   $("#xpTxt").textContent=nxt?"다음 레벨까지 "+(nxt[0]-xp)+" XP":"최고 레벨 달성!";
   const sk=streaks();$("#stk").textContent=sk.cur;$("#xpT").textContent=xp;
   const set=curSet();const ms=Object.keys(S.earned).length;$("#msd").textContent=ms;
-  const groups=[];set.forEach(m=>{let g=groups.find(x=>x.c===m.cat);if(!g){g={c:m.cat,l:[]};groups.push(g)}g.l.push(m)});
-  $("#missions").innerHTML=groups.map(g=>`<div class="mgrp"><h4>${esc(g.c)}</h4>`+g.l.map(m=>{
+  const tail=m=>(m.target>1?` <small>${m.target}회${m.weekly?" · 주간":""}</small>`:m.weekly?" <small>주간</small>":"")+(m.auto?" <small>🤖 자동</small>":"");
+  const rowOf=(m,isMine)=>{
+    if(!isMine)return `<div class="mrow"><div class="grow"><span class="mt">${esc(m.title)}</span>${tail(m)}</div><span class="xp">+${m.xp}</span><button class="pri" data-m="acc" data-id="${m.id}">받기</button>${String(m.id).startsWith("c")?`<button class="x" data-m="delc" data-id="${m.id}" title="삭제">✕</button>`:""}</div>`;
     const st=mstate(m),pct=Math.min(100,Math.round(st.val/st.target*100)),vv=Math.round(st.val*10)/10;
     let ctl;
     if(m.auto)ctl=`<span title="기록으로 자동 계산">🤖</span>`;
     else if(m.target>1)ctl=`<span class="cnt"><button data-m="dec" data-id="${m.id}">−</button><button data-m="inc" data-id="${m.id}">+</button></span>`;
     else ctl=`<button class="chk" data-m="tog" data-id="${m.id}">${st.done?"✅":"⬜"}</button>`;
     const prog=m.target>1?`<div class="mini"><i style="width:${pct}%"></i></div>`:"";
-    return `<div class="mrow${st.done?" done":""}">${ctl}<div class="grow"><span class="mt">${esc(m.title)}</span>${m.target>1?` <small>${vv}/${m.target}${m.weekly?" · 주간":""}</small>`:m.weekly?" <small>주간</small>":""}${prog}</div><span class="xp">+${m.xp}</span><button class="x" data-m="del" data-id="${m.id}" title="삭제">✕</button></div>`}).join("")+`</div>`).join("")||'<div class="empty">미션이 없습니다</div>';
+    const meta=m.target>1?` <small>${vv}/${m.target}${m.weekly?" · 주간":""}</small>`:m.weekly?" <small>주간</small>":"";
+    return `<div class="mrow${st.done?" done":""}">${ctl}<div class="grow"><span class="mt">${esc(m.title)}</span>${meta}${prog}</div><span class="xp">+${m.xp}</span><button class="x" data-m="drop" data-id="${m.id}" title="포기">✕</button></div>`};
+  const group=(list,isMine)=>{const gs=[];list.forEach(m=>{let g=gs.find(x=>x.c===m.cat);if(!g){g={c:m.cat,l:[]};gs.push(g)}g.l.push(m)});
+    return gs.map(g=>`<div class="mgrp"><h4>${esc(g.c)}</h4>${g.l.map(m=>rowOf(m,isMine)).join("")}</div>`).join("")};
+  const mineL=set.filter(isAcc),availL=set.filter(m=>!isAcc(m)),chosen=!!S.roleChosen;
+  $("#pick").hidden=chosen;$("#mboard").hidden=!chosen;$("#role").hidden=!chosen;
+  if(chosen){
+    $("#missions").innerHTML=group(mineL,true)||'<div class="empty">아래에서 미션을 받아 보세요</div>';
+    $("#availCnt").textContent=availL.length;
+    $("#avail").innerHTML=group(availL,false)||'<div class="empty">모든 미션을 받았어요!</div>';
+  }
   const c={apps:S.apps.length,iv:S.apps.filter(a=>["면접","최종","합격"].includes(a.st)).length,ok:S.apps.filter(a=>a.st==="합격").length,
     h:S.study.reduce((a,s)=>a+s.h,0),maxStk:sk.best,ms,lv:li};
   const got=BADGES.filter(b=>b[2](c)).length;$("#bcnt").textContent=got+"/"+BADGES.length;
@@ -458,11 +494,15 @@ function touch(act){
   if(g.length){const a=xpTotal();toast(lvIdx(a)>bl?"🎉 LEVEL UP! Lv."+(lvIdx(a)+1)+" "+LEVELS[lvIdx(a)][1]:"✨ 미션 완료! +"+(a-b)+" XP")}
 }
 $("#fMis").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);const t=Math.max(1,parseInt(f.get("target"))||1);
-  curSet().push(M("c"+id(),f.get("cat"),f.get("title").trim(),parseInt(f.get("xp")),t));e.target.title.value="";e.target.target.value=1;touch(false)};
+  const nt=f.get("title").trim();curSet().push(M("c"+id(),f.get("cat"),nt,parseInt(f.get("xp")),t));S.acc[nt]=1;e.target.title.value="";e.target.target.value=1;touch(false)};
 $("#role").onchange=e=>{S.role=e.target.value;touch(false)};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-role]");if(!b)return;
+  S.role=b.dataset.role;S.roleChosen=true;touch(false);toast("직무 선택 완료! 미션을 받아 보세요")});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;
   const m=curSet().find(x=>x.id===b.dataset.id);if(!m)return;const a=b.dataset.m;
-  if(a==="del"){if(!confirm("이 미션을 삭제할까요?"))return;S.sets[S.role]=curSet().filter(x=>x!==m);touch(false);return}
+  if(a==="acc"){S.acc[m.title]=1;touch(false);toast("📜 미션 수락! +"+m.xp+" XP 도전");return}
+  if(a==="drop"){if(!confirm("이 미션을 포기할까요? (이미 받은 XP는 유지됩니다)"))return;delete S.acc[m.title];touch(false);return}
+  if(a==="delc"){if(!confirm("이 미션을 삭제할까요?"))return;S.sets[S.role]=curSet().filter(x=>x!==m);delete S.acc[m.title];touch(false);return}
   const k=pk(m),v=S.prog[k]||0;
   if(a==="tog")S.prog[k]=v>=1?0:1;
   if(a==="inc")S.prog[k]=Math.min(m.target,v+1);
@@ -480,7 +520,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(
 document.addEventListener("change",e=>{if(e.target.classList.contains("st")){
   S.apps.find(a=>a.id==e.target.dataset.id).st=e.target.value;touch()}});
 $("#goal").onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.goal=v;touch()}};
-$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S=ensure({sample:false,goal:S.goal,apps:[],study:[],events:[],sets:S.sets,role:S.role,updated:Date.now()});reconcile();save();render();schedule()}};
+$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S=ensure({sample:false,goal:S.goal,apps:[],study:[],events:[],sets:S.sets,role:S.role,acc:{},roleChosen:false,earned:{},prog:{},act:[],updated:Date.now()});reconcile();save();render();schedule()}};
 $("#theme").onclick=()=>{setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");render()};
 $("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:"application/json"}));a.download="job-dashboard-"+fmt(today())+".json";a.click()};
 $("#imp").onclick=()=>$("#file").click();
