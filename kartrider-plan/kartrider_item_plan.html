@@ -1,0 +1,339 @@
+<title>마침표 레이서 기획서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 한 페이지 스크롤. 표지는 OMR 마킹 격자, 본문은 섹션별 카드·표·타임라인. */
+:root {
+  --bg: #F4F6FA;
+  --surface: #FFFFFF;
+  --surface-2: #EAEFF7;
+  --fg: #1B2433;
+  --muted: #5B6577;
+  --line: #D9DEE8;
+  --navy: #14213D;
+  --on-navy: #FFFFFF;
+  --on-navy-muted: #B7C2D8;
+  --accent: #FCA311;
+  --on-accent: #14213D;
+  --warn: #9A5B00;
+  --font-display: "Do Hyeon", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-body: "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1626; --surface: #172238; --surface-2: #1E2B46; --fg: #E8EDF7; --muted: #9AA7BF; --line: #2A3957;
+    --navy: #0A1222; --on-navy: #FFFFFF; --on-navy-muted: #A9B6CE; --warn: #F2B35A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1626; --surface: #172238; --surface-2: #1E2B46; --fg: #E8EDF7; --muted: #9AA7BF; --line: #2A3957;
+  --navy: #0A1222; --on-navy: #FFFFFF; --on-navy-muted: #A9B6CE; --warn: #F2B35A;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 960px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; margin: 0; line-height: 1.25; }
+h2 { font-size: clamp(26px, 4vw, 34px); color: var(--fg); }
+h3 { font-size: 20px; }
+p { margin: 0; }
+section { padding-block: 44px 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+.lead { color: var(--muted); max-width: 62ch; margin-top: 10px; }
+
+/* hero */
+.hero { background: var(--navy); color: var(--on-navy); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)); padding-block: 56px 48px; }
+.hero .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; }
+.hero .kicker { color: var(--accent); font-weight: 700; font-size: 15px; }
+.hero h1 { font-size: clamp(40px, 8vw, 68px); margin: 10px 0 14px; color: var(--on-navy); }
+.hero p { color: var(--on-navy-muted); font-size: 18px; }
+.hero small { display: block; margin-top: 22px; color: var(--on-navy-muted); font-size: 13px; }
+.omr { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; min-width: 0; }
+.omr span { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--on-navy-muted); opacity: .55; }
+.omr span.on { background: var(--accent); border-color: var(--accent); opacity: 1; }
+.omr-wrap { min-width: 0; }
+.omr-cap { margin-top: 12px; font-size: 13px; color: var(--on-navy-muted); }
+
+/* generic blocks */
+.grid { display: grid; gap: 16px; margin-top: 22px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-width: 0; }
+.card h3 { margin-bottom: 10px; }
+.card ul { margin: 0; padding-left: 1.1em; }
+.card li { margin-bottom: 6px; }
+.stat { text-align: center; }
+.stat b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 32px; color: var(--fg); line-height: 1.3; }
+.stat span { display: block; font-size: 14px; color: var(--muted); margin-top: 4px; }
+.pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 99px; background: var(--accent); color: var(--on-accent); }
+.pill.no { background: var(--surface-2); color: var(--muted); }
+.comp .n { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--font-display); font-size: 18px; margin-bottom: 12px; }
+.comp p { color: var(--muted); font-size: 14px; }
+.note { margin-top: 14px; font-size: 14px; color: var(--warn); }
+
+/* tables */
+.tscroll { overflow-x: auto; margin-top: 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 15px; }
+th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--navy); color: var(--on-navy); font-weight: 700; font-size: 14px; }
+td:first-child { font-weight: 700; background: var(--surface-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.todo { color: var(--warn); font-weight: 500; white-space: nowrap; }
+
+/* timeline */
+.tl { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.tl li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 10px; text-align: center; }
+.tl li b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 17px; color: var(--fg); }
+.tl li span { font-size: 14px; color: var(--muted); }
+.tl li.go { background: var(--accent); border-color: var(--accent); }
+.tl li.go b, .tl li.go span { color: var(--on-accent); }
+
+.todo-list { margin: 18px 0 0; padding-left: 1.2em; }
+.todo-list li { margin-bottom: 6px; }
+footer { padding-block: 48px 40px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 760px) {
+  .hero .wrap { grid-template-columns: 1fr; }
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g2 { grid-template-columns: 1fr; }
+  .tl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="kicker">카트라이더 러쉬플러스 · 인앱 결제 아이템 기획서</div>
+      <h1>자유 질주 패키지<br>마침표 레이서</h1>
+      <p>시험의 마침표를 찍고, 새로운 출발선에 서다.</p>
+      <small>2026-11-19 초안 · 목표 수치, 가격대, 결제 한도는 확인 필요</small>
+    </div>
+    <div class="omr-wrap" aria-hidden="true">
+      <div class="omr">
+        <span></span><span class="on"></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span class="on"></span><span></span>
+        <span class="on"></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span class="on"></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span class="on"></span>
+      </div>
+      <div class="omr-cap">답안지 마킹이 끝나면 출발선</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="summary">
+  <div class="eyebrow">요약</div>
+  <h2>한눈에 보기</h2>
+  <p class="lead">수능을 마친 수험생의 해방감을 컨셉으로 한 한정 카트바디 스킨 번들입니다. 모두 외형 아이템이라 주행 성능에 영향이 없습니다.</p>
+  <div class="grid g4">
+    <div class="card stat"><b>9,900원</b><span>단일 상품, 확정형<br>(뽑기 없음)</span></div>
+    <div class="card stat"><b>2주</b><span>수능 다음 날부터<br>한정 판매</span></div>
+    <div class="card stat"><b>4종</b><span>스킨 · 이펙트<br>번호판 · 이모트</span></div>
+    <div class="card stat"><b>매출 · 복귀</b><span>매출 1순위<br>복귀 유저 2순위</span></div>
+  </div>
+</section>
+
+<section id="issue">
+  <div class="eyebrow">배경</div>
+  <h2>왜 수능인가</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>모티브 이슈</h3>
+      <ul>
+        <li>2026-11-19 수능일</li>
+        <li>수험생은 오래 미룬 게임으로 돌아오는 대표적인 복귀 집단</li>
+        <li>러쉬플러스 주 이용층(10대)과 겹침</li>
+        <li>"시험 끝, 이제 달릴 시간"이라는 정서가 레이싱과 맞음</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>검토 후 제외한 후보</h3>
+      <ul>
+        <li><b>안세영 우승</b> : 실존 인물의 이름·초상 사용 불가</li>
+        <li><b>지스타 2026</b> : 넥슨 대형 부스 불참으로 현장 연계 어려움</li>
+        <li><b>붕어빵 가격</b> : 확인된 기사가 2025년 말 자료</li>
+        <li><b>증시 급락·과징금</b> : 게임 상품 모티브로 부적절</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">수능 관련 보도는 제목만 확인했습니다. 시즌 42 '비밀화원'을 운영 중이라 컨셉과 노출 위치가 겹치지 않게 설계합니다.</p>
+</section>
+
+<section id="concept">
+  <div class="eyebrow">컨셉</div>
+  <h2>시험 후 해방</h2>
+  <p class="lead">수능을 직접 언급하지 않고 "시험 후 해방"으로 일반화해, 응시 여부와 점수에 상관없이 누구나 공감하게 합니다.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="pill">하는 것</span></h3>
+      <ul style="margin-top:12px">
+        <li>답안지, OMR, 연필 모티브</li>
+        <li>밝고 가벼운 해방감의 톤</li>
+        <li>모든 구성품은 외형 전용</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="pill no">하지 않는 것</span></h3>
+      <ul style="margin-top:12px">
+        <li>실제 수능 문항, 로고, 기관 표기</li>
+        <li>점수, 낙방, 경쟁을 연상시키는 요소</li>
+        <li>AI 커닝 등 논란 소재</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="items">
+  <div class="eyebrow">구성품</div>
+  <h2>번들 4종</h2>
+  <div class="grid g4">
+    <div class="card comp"><div class="n">1</div><h3>한정 카트바디 스킨</h3><p>답안지·OMR·연필 모티브의 외형. 영구 소장.</p></div>
+    <div class="card comp"><div class="n">2</div><h3>부스터 이펙트</h3><p>부스터 사용 시 시험지 조각이 흩날리는 연출.</p></div>
+    <div class="card comp"><div class="n">3</div><h3>번호판</h3><p>수험번호 스타일. 예: FREE-1119</p></div>
+    <div class="card comp"><div class="n">4</div><h3>이모트</h3><p>연필을 던지며 환호하는 동작.</p></div>
+  </div>
+  <p class="note">구성품 이름과 수치는 시안 단계의 예시이며 아트 확정 시 변경될 수 있습니다.</p>
+</section>
+
+<section id="sales">
+  <div class="eyebrow">판매 · 복귀 혜택</div>
+  <h2>판매 조건과 복귀 혜택</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>판매 조건</h3>
+      <ul>
+        <li>가격 9,900원 단일 상품 (기존 상품 가격대와의 정합성 확인 필요)</li>
+        <li>확정형 직접 구매, 확률형 요소 없음</li>
+        <li>정가 판매, 할인 없음</li>
+        <li>수능 다음 날부터 2주 한정, 재판매 없음</li>
+        <li>예시: 2026-11-20 ~ 12-03 (확정 아님)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>복귀 유저 혜택</h3>
+      <ul>
+        <li>대상: 30일 이상 미접속 후 판매 기간에 접속한 유저</li>
+        <li>무료 이펙트 1종(영구) + 접속 미션 보상</li>
+        <li>할인 쿠폰, 스킨 체험권은 제외 (정가 판매 원칙 유지)</li>
+        <li>무료 이펙트로 복귀한 뒤 같은 컨셉의 번들 구매로 이어지게 설계</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="monetization">
+  <div class="eyebrow">과금 · 보호</div>
+  <h2>과금 설계와 미성년 보호</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>과금 설계</h3>
+      <ul>
+        <li>단일 상품으로 충동 구매 부담을 낮춤</li>
+        <li>스킨이 핵심 가치, 꾸미기 3종이 번들 가치를 높임</li>
+        <li>성능 아이템이 없어 페이투윈 논란 없음</li>
+        <li>확률형이 없어 확률 공개 의무와 뽑기 논란을 피함</li>
+        <li>한정 문구는 환불 조건과 함께 표기</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>미성년 보호</h3>
+      <ul>
+        <li>월 결제 한도를 스토어 정책과 게임 내 정책에 맞춰 적용 (정확한 한도 확인 필요)</li>
+        <li>구매 확인 팝업에 한정 판매 기간, 재판매 없음, 환불 조건 명시</li>
+        <li>청약철회(구매 후 7일 이내, 미사용 시) 안내를 상품 상세에 노출 (법무 확인 필요)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="promo">
+  <div class="eyebrow">UI · 홍보</div>
+  <h2>노출 위치와 홍보 채널</h2>
+  <div class="tscroll">
+    <table>
+      <thead><tr><th>위치·채널</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>로그인 팝업</td><td>번들 대표 이미지, 판매 종료 시점. 복귀 유저에게는 무료 이펙트 수령 안내</td></tr>
+        <tr><td>상점 배너</td><td>상점 첫 화면 상단, 남은 판매 기간 표시</td></tr>
+        <tr><td>상품 상세</td><td>구성품 4종 미리보기, 판매 조건, 청약철회 안내</td></tr>
+        <tr><td>공식 SNS · 쇼츠</td><td>"시험 끝, 이제 달릴 시간" 숏폼 영상</td></tr>
+        <tr><td>푸시 알림</td><td>30일 이상 미접속자 중 수신 동의자에 한해 발송</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">홍보 공통 금지: 실존 인물, 실제 수능 문항, 타 사 IP</p>
+</section>
+
+<section id="risk">
+  <div class="eyebrow">리스크</div>
+  <h2>리스크와 대응</h2>
+  <div class="tscroll">
+    <table>
+      <thead><tr><th>리스크</th><th>대응</th></tr></thead>
+      <tbody>
+        <tr><td>수능 소재의 민감성</td><td>"시험 후 해방"으로 일반화하고 논란 요소를 배제. 실제 문항·로고 미사용</td></tr>
+        <tr><td>한정 마케팅 반감</td><td>환불 조건을 함께 표기하고 푸시는 수신 동의자에게만 발송</td></tr>
+        <tr><td>시즌 42 '비밀화원'과 중복</td><td>아트 방향과 노출 위치를 분리</td></tr>
+        <tr><td>출시 일정</td><td>이번 수능은 제작 일정상 불가. 역산 일정으로 차기 시즌에 대응</td></tr>
+        <tr><td>가격대 불일치</td><td>기존 상품 가격 정책 확인 후 확정</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="kpi">
+  <div class="eyebrow">KPI</div>
+  <h2>지표만 정의, 목표값은 입력 대기</h2>
+  <p class="lead">러쉬플러스의 실제 기준 데이터를 입력한 뒤 목표값을 확정합니다.</p>
+  <div class="tscroll">
+    <table>
+      <thead><tr><th>순위</th><th>지표</th><th>산식</th><th>목표</th></tr></thead>
+      <tbody>
+        <tr><td>1 매출</td><td>번들 구매 전환율</td><td>번들 구매 유저 ÷ 판매 기간 접속 유저</td><td class="todo">입력 필요</td></tr>
+        <tr><td>1 매출</td><td>ARPPU 증감</td><td>판매 기간 ARPPU − 직전 동일 기간 ARPPU</td><td class="todo">입력 필요</td></tr>
+        <tr><td>2 복귀</td><td>복귀 유저 수</td><td>30일 이상 미접속 후 접속한 유저 수</td><td class="todo">입력 필요</td></tr>
+        <tr><td>2 복귀</td><td>복귀 후 7일 유지율</td><td>7일 후에도 접속한 복귀 유저 ÷ 복귀 유저 수</td><td class="todo">입력 필요</td></tr>
+        <tr><td>2 복귀</td><td>복귀 유저의 번들 구매율</td><td>번들 구매한 복귀 유저 ÷ 복귀 유저 수</td><td class="todo">입력 필요</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="schedule">
+  <div class="eyebrow">일정</div>
+  <h2>수능일(D) 기준 약 8주 역산</h2>
+  <ol class="tl">
+    <li><b>D-56</b><span>기획 확정</span></li>
+    <li><b>D-49~35</b><span>아트 제작</span></li>
+    <li><b>D-35~21</b><span>개발</span></li>
+    <li><b>D-21~10</b><span>QA</span></li>
+    <li><b>D-10~3</b><span>심사 · 홍보</span></li>
+    <li class="go"><b>D+1</b><span>출시</span></li>
+    <li class="go"><b>D+14</b><span>종료</span></li>
+  </ol>
+  <p class="note">이번 수능(2026-11-19)의 다음 날 판매는 제작 일정상 불가합니다. 11/20~12/03은 예시이며 실제 출시일은 담당자가 확정합니다.</p>
+</section>
+
+<section id="open">
+  <div class="eyebrow">확인 필요</div>
+  <h2>남은 확인 항목</h2>
+  <ul class="todo-list">
+    <li>KPI 목표 수치 (기준 데이터)</li>
+    <li>번들 가격 9,900원과 기존 상품 가격대의 정합성</li>
+    <li>미성년 월 결제 한도의 정확한 수치</li>
+    <li>청약철회 적용 조건 (법무 확인)</li>
+    <li>영구 소장 여부, 복귀 보상 수량과 접속 미션 내용</li>
+    <li>시즌 42 일정과의 충돌 여부</li>
+    <li>수능 관련 인용 기사 본문 확인 (제목만 확인함)</li>
+  </ul>
+</section>
+
+</main>
+<footer><div class="wrap">카트라이더 러쉬플러스 · 자유 질주 패키지 : 마침표 레이서 · 2026-11-19 초안</div></footer>
