@@ -66,6 +66,12 @@ form button{flex:0 0 auto}
 .empty{color:var(--muted);font-size:13px;padding:10px 0;text-align:center}
 .goalrow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:6px}
 .goalrow input{width:70px;padding:4px 6px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:18px;width:min(92vw,420px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog input{width:100%;margin:8px 0;font-family:monospace}
+.dbtns{display:flex;gap:6px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:13px;margin:6px 0}
+#sync.on{border-color:var(--ok);color:var(--ok)}
 @media(max-width:820px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -76,10 +82,25 @@ form button{flex:0 0 auto}
   <div class="tools">
     <button class="ghost" id="exp">내보내기</button>
     <button class="ghost" id="imp">가져오기</button>
+    <button class="ghost" id="sync">☁ 동기화</button>
     <button class="ghost" id="theme">🌙 다크</button>
     <input type="file" id="file" accept=".json" hidden>
   </div>
 </header>
+
+<dialog id="dlg">
+  <h2>☁ 폰·PC 동기화</h2>
+  <p class="hint">두 기기에 같은 코드를 입력하세요.</p>
+  <input id="code" placeholder="동기화 코드 (16자 이상)" autocomplete="off" spellcheck="false">
+  <div class="dbtns">
+    <button class="ghost" id="gen">새 코드 만들기</button>
+    <button class="pri" id="conn">연결</button>
+    <button class="ghost" id="disc">해제</button>
+    <button class="ghost" id="close">닫기</button>
+  </div>
+  <p class="hint" id="sst"></p>
+  <p class="hint">코드는 비밀번호처럼 보관하세요.</p>
+</dialog>
 
 <div class="banner" id="banner" hidden>
   <span>지금은 샘플 데이터입니다.</span>
@@ -288,7 +309,7 @@ function render(){
     <button class="x" data-del="events" data-id="${e.id}" title="삭제">✕</button></div>`}).join(""):'<div class="empty">일정이 없습니다</div>';
 }
 
-function touch(){S.sample=false;save();render()}
+function touch(){S.sample=false;S.updated=Date.now();save();render();schedule()}
 $("#fApp").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
   S.apps.push({id:id(),co:f.get("co").trim(),job:f.get("job").trim(),date:f.get("date"),st:f.get("st"),memo:f.get("memo").trim()});
   e.target.co.value="";e.target.job.value="";e.target.memo.value="";touch()};
@@ -301,14 +322,66 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(
 document.addEventListener("change",e=>{if(e.target.classList.contains("st")){
   S.apps.find(a=>a.id==e.target.dataset.id).st=e.target.value;touch()}});
 $("#goal").onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.goal=v;touch()}};
-$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S={sample:false,goal:S.goal,apps:[],study:[],events:[]};save();render()}};
+$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S={sample:false,goal:S.goal,apps:[],study:[],events:[],updated:Date.now()};save();render();schedule()}};
 $("#theme").onclick=()=>{setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");render()};
 $("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:"application/json"}));a.download="job-dashboard-"+fmt(today())+".json";a.click()};
 $("#imp").onclick=()=>$("#file").click();
 $("#file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.apps||!d.study||!d.events)throw 0;S=Object.assign({goal:20},d,{sample:false});save();render()}catch(x){alert("올바른 백업 파일이 아닙니다")}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.apps||!d.study||!d.events)throw 0;S=Object.assign({goal:20},d,{sample:false,updated:Date.now()});save();render();schedule()}catch(x){alert("올바른 백업 파일이 아닙니다")}};
   r.readAsText(f);e.target.value=""};
 render();
+
+// ---- 동기화 (Firestore REST) ----
+const FB={key:"AIzaSyCylgdEDb2WQXQE1Hmb8EyJ4yy-E8Cda6k",pid:"job-dashboard-sync-8f523"};
+const SKEY="jobdash-sync";
+let code="";try{code=localStorage.getItem(SKEY)||""}catch(e){}
+let busy=false,timer=null;
+const furl=()=>"https://firestore.googleapis.com/v1/projects/"+FB.pid+"/databases/(default)/documents/dash/"+code+"?key="+FB.key;
+async function pull(){
+  const r=await fetch(furl());
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error("pull "+r.status);
+  const j=await r.json();
+  return JSON.parse(j.fields.data.stringValue);
+}
+async function push(){
+  const r=await fetch(furl(),{method:"PATCH",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(S)}}})});
+  if(!r.ok)throw new Error("push "+r.status);
+}
+function status(t){$("#sst").textContent=t}
+function paintBtn(){const b=$("#sync");b.classList.toggle("on",!!code);b.textContent=code?"☁ 연결됨":"☁ 동기화"}
+function nowStr(){const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())}
+async function syncNow(){
+  if(!code||busy)return;busy=true;
+  try{
+    const r=await pull();const lu=S.updated||0,ru=r?(r.updated||0):-1;
+    if(r&&ru>lu){S=Object.assign({goal:20},r,{sample:false});save();render()}
+    else if(!S.sample&&lu>ru){await push()}
+    status("동기화됨 "+nowStr());
+  }catch(e){status("연결 실패 · 인터넷을 확인하세요")}
+  busy=false;
+}
+function schedule(){if(!code)return;clearTimeout(timer);timer=setTimeout(syncNow,700)}
+function genCode(){const a="abcdefghjkmnpqrstuvwxyz23456789",v=new Uint32Array(20);crypto.getRandomValues(v);return Array.from(v,x=>a[x%a.length]).join("")}
+$("#sync").onclick=()=>{$("#code").value=code;status(code?"연결됨":"");$("#dlg").showModal()};
+$("#close").onclick=()=>$("#dlg").close();
+$("#gen").onclick=()=>{$("#code").value=genCode()};
+$("#conn").onclick=async()=>{
+  const c=$("#code").value.trim();
+  if(!/^[A-Za-z0-9]{16,64}$/.test(c)){status("영문·숫자 16자 이상이어야 합니다");return}
+  code=c;
+  try{
+    const r=await pull();
+    if(r&&!S.sample&&(r.updated||0)>(S.updated||0)&&!confirm("서버 데이터로 이 기기 내용을 덮어쓸까요?")){code="";status("취소했습니다");return}
+  }catch(e){code="";status("연결 실패 · 인터넷을 확인하세요");return}
+  try{localStorage.setItem(SKEY,code)}catch(e){}
+  paintBtn();await syncNow();
+};
+$("#disc").onclick=()=>{code="";try{localStorage.removeItem(SKEY)}catch(e){}paintBtn();$("#code").value="";status("해제했습니다")};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncNow()});
+setInterval(syncNow,20000);
+paintBtn();syncNow();
 })();
 </script>
 </body>
