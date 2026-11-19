@@ -88,14 +88,13 @@ form button{flex:0 0 auto}
 .xp{font-size:12px;font-weight:700;color:var(--c4);white-space:nowrap}
 .mini{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
 .mini i{display:block;height:100%;background:var(--accent)}
-.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px}
 .pickbtn{padding:18px 8px;font-size:18px;font-weight:700;border-radius:14px;text-align:center}
 .pickbtn small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:4px}
 .pickbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--card))}
 details.avail{margin-top:8px}
 details.avail summary{cursor:pointer;font-weight:700;padding:6px 0}
 .mrow .pri{padding:4px 12px}
-@media(max-width:560px){.picks{grid-template-columns:1fr}}
 .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
 .bd{text-align:center;padding:10px 4px;border:1px solid var(--line);border-radius:12px;font-size:12px}
 .bd .ic{font-size:28px;display:block}
@@ -163,6 +162,8 @@ dialog input{width:100%;margin:8px 0;font-family:monospace}
         <button class="pickbtn" data-role="dev">💻 개발<small>엔진 구현·코테·깃허브</small></button>
         <button class="pickbtn" data-role="plan">📝 기획<small>기획서·밸런스·역기획</small></button>
         <button class="pickbtn" data-role="art">🎨 아트<small>작품·툴·스타일 분석</small></button>
+        <button class="pickbtn" data-role="ops">🛠 운영<small>공지·이벤트·커뮤니티</small></button>
+        <button class="pickbtn" data-role="qa">🐞 QA<small>버그 리포트·테스트 케이스</small></button>
       </div>
     </div>
     <div id="mboard">
@@ -296,7 +297,7 @@ function sample(){
   ].map(e=>({id:id(),title:e[0],type:e[1],date:addDays(e[2])}))};
 }
 // ---- 챌린지 보드 ----
-const ROLES={dev:"개발",plan:"기획",art:"아트"};
+const ROLES={dev:"개발",plan:"기획",art:"아트",ops:"운영",qa:"QA"};
 const MCATS=["포트폴리오","직무 공부","게임 분석","지원","면접"];
 const LEVELS=[[0,"신입 모험가"],[60,"튜토리얼 졸업"],[150,"서류 돌파"],[280,"면접 생존자"],[450,"중간 보스"],[650,"최종 보스 도전"],[900,"입사 보스 격파"]];
 const BADGES=[
@@ -321,13 +322,20 @@ function mkSets(){
       ...g("p"),M("p7","게임 분석","게임 분석 보고서 1장",30),...common("p")],
     art:[M("a1","포트폴리오","대표 작품 5점 완성",40,5),M("a2","포트폴리오","아트스테이션 업로드",20),M("a3","포트폴리오","작업 과정 영상 올리기",20),M("a14","포트폴리오","포트폴리오 웹사이트 만들기",20),
       M("a4","직무 공부","툴 익히기 (포토샵/블렌더/마야)",30),M("a15","직무 공부","드로잉 연습 주 5회",30,5,null,true),M("a5","직무 공부","작업 시간 주 5시간",30,5,{k:"study_week",cat:"포트폴리오"},true),
-      ...g("a","신작 게임 아트 리뷰"),M("a7","게임 분석","지원사 아트 스타일 분석 1장",30),...common("a")]};
+      ...g("a","신작 게임 아트 리뷰"),M("a7","게임 분석","지원사 아트 스타일 분석 1장",30),...common("a")],
+    ops:[M("o1","포트폴리오","운영 기획서·공지문 샘플 3개",40,3),M("o2","포트폴리오","이벤트 운영 기획서 1개",30),M("o3","포트폴리오","포트폴리오 PDF 정리",20),
+      M("o4","직무 공부","커뮤니티 모니터링 일지 주 5회",30,5,null,true),M("o5","직무 공부","유저 문의 응대 시나리오 5개",30,5),M("o14","직무 공부","지표 용어 공부 (DAU·ARPU·리텐션)",20),
+      ...g("o","신작 게임 운영 방식 리뷰"),M("o7","게임 분석","지원사 커뮤니티 분석 1장",30),...common("o")],
+    qa:[M("q1","포트폴리오","버그 리포트 샘플 10개",40,10),M("q2","포트폴리오","테스트 케이스 문서 1개",30),M("q3","포트폴리오","포트폴리오 PDF 정리",20),
+      M("q4","직무 공부","게임 플레이 중 버그 찾기 주 5회",30,5,null,true),M("q5","직무 공부","테스트 이론 공부 (ISTQB 등)",20),M("q14","직무 공부","이슈 추적 툴 익히기 (Jira 등)",20),
+      ...g("q","신작 게임 QA 관점 리뷰"),M("q7","게임 분석","지원사 게임 버그 1건 리포트",30),...common("q")]};
 }
 const SETVER=2;
 function ensure(s){
   if(!s.sets)s.sets=mkSets();
   else if((s.setVer||1)<SETVER){const f=mkSets();["plan","art"].forEach(r=>{const cu=(s.sets[r]||[]).filter(m=>String(m.id).startsWith("c"));s.sets[r]=f[r].concat(cu)})}
   s.setVer=SETVER;
+  {const f=mkSets();["ops","qa"].forEach(r=>{if(!s.sets[r])s.sets[r]=f[r]})}
   if(!s.earned)s.earned={};if(!s.prog)s.prog={};
   if(s.acc===undefined){s.acc={};
     Object.keys(s.prog).forEach(k=>{if(s.prog[k]>0)s.acc[k.split("@")[0]]=1});
