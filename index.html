@@ -292,19 +292,23 @@ function mkSets(){
     M(p+"11","지원","주 3곳 지원",40,3,{k:"apps_week"},true),
     M(p+"12","면접","모의면접 3회",40,3),
     M(p+"13","면접","회사별 질문 정리",20)];
-  const g=p=>[M(p+"6","게임 분석","지원사 게임 직접 플레이",20),M(p+"8","게임 분석","신작 게임 리뷰",20)];
+  const g=(p,rev)=>[M(p+"6","게임 분석","지원사 게임 직접 플레이",20),M(p+"8","게임 분석",rev||"신작 게임 리뷰",20)];
   return {
     dev:[M("d1","포트폴리오","대표 프로젝트 3개 완성",40,3),M("d2","포트폴리오","플레이 영상 올리기",20),M("d3","포트폴리오","깃허브 정리",20),
       M("d4","직무 공부","엔진(Unity/Unreal) 기능 구현",30),M("d5","직무 공부","코테 주 5시간",30,5,{k:"study_week",cat:"코테"},true),
       ...g("d"),M("d7","게임 분석","기획서 1장 쓰기",30),...common("d")],
-    plan:[M("p1","포트폴리오","기획서 3개 완성",40,3),M("p2","포트폴리오","기획 포트폴리오 PDF 정리",20),M("p3","포트폴리오","포트폴리오 사이트 만들기",20),
-      M("p4","직무 공부","밸런스 시트 1개 만들기",30),M("p5","직무 공부","레벨·시스템 기획 1개",30),
+    plan:[M("p1","포트폴리오","기획서 3개 완성",40,3),M("p2","포트폴리오","시스템 기획서 1개",30),M("p3","포트폴리오","레벨·콘텐츠 기획서 1개",30),M("p4","포트폴리오","포트폴리오 PDF 정리",20),
+      M("p5","직무 공부","밸런스 시트 1개 만들기",30),M("p14","직무 공부","엑셀 수식·데이터 시트 공부",20),M("p15","직무 공부","게임 3개 역기획",30,3),
       ...g("p"),M("p7","게임 분석","게임 분석 보고서 1장",30),...common("p")],
-    art:[M("a1","포트폴리오","대표 작품 5점 완성",40,5),M("a2","포트폴리오","아트스테이션 업로드",20),M("a3","포트폴리오","작업 과정 영상 올리기",20),
-      M("a4","직무 공부","툴 하나 익히기 (블렌더 등)",30),M("a5","직무 공부","작업 주 5시간",30,5,{k:"study_week",cat:"포트폴리오"},true),
-      ...g("a"),M("a7","게임 분석","지원사 아트 스타일 분석 1장",30),...common("a")]};
+    art:[M("a1","포트폴리오","대표 작품 5점 완성",40,5),M("a2","포트폴리오","아트스테이션 업로드",20),M("a3","포트폴리오","작업 과정 영상 올리기",20),M("a14","포트폴리오","포트폴리오 웹사이트 만들기",20),
+      M("a4","직무 공부","툴 익히기 (포토샵/블렌더/마야)",30),M("a15","직무 공부","드로잉 연습 주 5회",30,5,null,true),M("a5","직무 공부","작업 시간 주 5시간",30,5,{k:"study_week",cat:"포트폴리오"},true),
+      ...g("a","신작 게임 아트 리뷰"),M("a7","게임 분석","지원사 아트 스타일 분석 1장",30),...common("a")]};
 }
-function ensure(s){if(!s.sets)s.sets=mkSets();if(!s.role)s.role="dev";if(!s.earned)s.earned={};if(!s.prog)s.prog={};if(!s.act)s.act=[];return s}
+const SETVER=2;
+function ensure(s){
+  if(!s.sets)s.sets=mkSets();
+  else if((s.setVer||1)<SETVER){const f=mkSets();["plan","art"].forEach(r=>{const cu=(s.sets[r]||[]).filter(m=>String(m.id).startsWith("c"));s.sets[r]=f[r].concat(cu)})}
+  s.setVer=SETVER;if(!s.role)s.role="dev";if(!s.earned)s.earned={};if(!s.prog)s.prog={};if(!s.act)s.act=[];return s}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.apps)return ensure(s)}catch(e){}
   const s=sample();s.prog={"대표 프로젝트 3개 완성":1,"깃허브 정리":1,"이력서·자소서 작성":1,"모의면접 3회":2};s.act=[0,1,2,3].map(i=>addDays(-i));return ensure(s)}
 let S=load();
@@ -321,7 +325,8 @@ function autoVal(m){const wk=wkStart();
   if(m.auto.k==="apps_week")return S.apps.filter(a=>parse(a.date)>=wk).length;
   if(m.auto.k==="study_week")return S.study.filter(s=>parse(s.date)>=wk&&s.cat===m.auto.cat).reduce((a,s)=>a+s.h,0);
   return 0}
-function mstate(m){const val=m.auto?autoVal(m):(S.prog[m.title]||0);return {val,target:m.target,done:val>=m.target}}
+const pk=m=>m.weekly?m.title+"@"+fmt(wkStart()):m.title;
+function mstate(m){const val=m.auto?autoVal(m):(S.prog[pk(m)]||0);return {val,target:m.target,done:val>=m.target}}
 const mkey=m=>m.weekly?m.title+"@"+fmt(wkStart()):m.title;
 function reconcile(){const gained=[];
   curSet().forEach(m=>{const st=mstate(m),k=mkey(m);
@@ -458,10 +463,10 @@ $("#role").onchange=e=>{S.role=e.target.value;touch(false)};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;
   const m=curSet().find(x=>x.id===b.dataset.id);if(!m)return;const a=b.dataset.m;
   if(a==="del"){if(!confirm("이 미션을 삭제할까요?"))return;S.sets[S.role]=curSet().filter(x=>x!==m);touch(false);return}
-  const v=S.prog[m.title]||0;
-  if(a==="tog")S.prog[m.title]=v>=1?0:1;
-  if(a==="inc")S.prog[m.title]=Math.min(m.target,v+1);
-  if(a==="dec")S.prog[m.title]=Math.max(0,v-1);
+  const k=pk(m),v=S.prog[k]||0;
+  if(a==="tog")S.prog[k]=v>=1?0:1;
+  if(a==="inc")S.prog[k]=Math.min(m.target,v+1);
+  if(a==="dec")S.prog[k]=Math.max(0,v-1);
   touch()});
 $("#fApp").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
   S.apps.push({id:id(),co:f.get("co").trim(),job:f.get("job").trim(),date:f.get("date"),st:f.get("st"),memo:f.get("memo").trim()});
