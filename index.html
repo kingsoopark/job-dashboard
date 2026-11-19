@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>취업 대시보드</title>
+<title>게임회사 취업 챌린지</title>
 <style>
 :root{
   --bg:#f4f7fb;--card:#fff;--text:#1b2433;--muted:#6b778c;--line:#e3e9f2;
@@ -66,6 +66,34 @@ form button{flex:0 0 auto}
 .empty{color:var(--muted);font-size:13px;padding:10px 0;text-align:center}
 .goalrow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:6px}
 .goalrow input{width:70px;padding:4px 6px}
+.hero{margin-bottom:14px;background:linear-gradient(135deg,var(--card),var(--card))}
+.hl{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lv{font-size:34px;font-weight:800;color:var(--accent)}
+.lvname{font-size:17px;font-weight:700}
+.xpbar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 4px}
+.xpfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--c4));border-radius:999px;transition:width .5s}
+.xptxt{font-size:13px;color:var(--muted)}
+.hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;text-align:center}
+.hstats b{display:block;font-size:24px}
+.hstats span{font-size:12px;color:var(--muted)}
+.mgrp{margin-bottom:10px}
+.mgrp h4{margin:6px 0;font-size:13px;color:var(--muted)}
+.mrow{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:14px}
+.mrow.done{background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:var(--ok)}
+.mrow.done .mt{text-decoration:line-through;opacity:.7}
+.mrow .grow{flex:1;min-width:0}
+.mrow .chk{border:0;background:none;font-size:20px;padding:0 4px;line-height:1}
+.mrow .cnt{display:flex;align-items:center;gap:4px}
+.mrow .cnt button{padding:0 8px;font-size:16px;line-height:1.4}
+.xp{font-size:12px;font-weight:700;color:var(--c4);white-space:nowrap}
+.mini{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
+.mini i{display:block;height:100%;background:var(--accent)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.bd{text-align:center;padding:10px 4px;border:1px solid var(--line);border-radius:12px;font-size:12px}
+.bd .ic{font-size:28px;display:block}
+.bd.lock{opacity:.35;filter:grayscale(1)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:20;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:18px;width:min(92vw,420px)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog input{width:100%;margin:8px 0;font-family:monospace}
@@ -78,7 +106,7 @@ dialog input{width:100%;margin:8px 0;font-family:monospace}
 <body>
 <div class="wrap">
 <header>
-  <h1>🎯 취업 대시보드</h1>
+  <h1>🎮 게임회사 취업 챌린지</h1>
   <div class="tools">
     <button class="ghost" id="exp">내보내기</button>
     <button class="ghost" id="imp">가져오기</button>
@@ -106,6 +134,34 @@ dialog input{width:100%;margin:8px 0;font-family:monospace}
   <span>지금은 샘플 데이터입니다.</span>
   <button class="pri" id="clear">샘플 지우고 시작</button>
 </div>
+
+<section id="board">
+  <div class="panel hero">
+    <div class="hl"><span class="lv" id="lvN">Lv.1</span><span class="lvname" id="lvName"></span></div>
+    <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+    <div class="xptxt" id="xpTxt"></div>
+    <div class="hstats">
+      <div><b id="stk">0</b><span>🔥 연속일</span></div>
+      <div><b id="xpT">0</b><span>총 XP</span></div>
+      <div><b id="msd">0</b><span>완료 미션</span></div>
+    </div>
+  </div>
+  <div class="sec-title"><span class="dot" style="background:var(--c4)"></span><h2>미션</h2>
+    <select id="role" style="margin-left:auto"></select></div>
+  <div class="panel">
+    <div id="missions"></div>
+    <form id="fMis">
+      <input name="title" placeholder="새 미션 이름" required>
+      <select name="cat"></select>
+      <select name="xp"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>50</option></select>
+      <input name="target" type="number" min="1" max="50" value="1" title="횟수">
+      <button class="pri">+ 미션</button>
+    </form>
+  </div>
+  <div class="sec-title"><span class="dot" style="background:var(--warn)"></span><h2>배지</h2><span class="hint" id="bcnt"></span></div>
+  <div class="panel"><div class="badges" id="badges"></div></div>
+</section>
+<div id="toast"></div>
 
 <div class="cards">
   <div class="card"><div class="l">총 지원</div><div class="n" id="c1">0</div><div class="s" id="c1s"></div></div>
@@ -220,12 +276,91 @@ function sample(){
     ["토익 시험","시험",20],["별빛통신 면접","면접",-3],["하늘제약 마감","마감",-8]
   ].map(e=>({id:id(),title:e[0],type:e[1],date:addDays(e[2])}))};
 }
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.apps)return s}catch(e){}return sample()}
+// ---- 챌린지 보드 ----
+const ROLES={dev:"개발",plan:"기획",art:"아트"};
+const MCATS=["포트폴리오","직무 공부","게임 분석","지원","면접"];
+const LEVELS=[[0,"신입 모험가"],[60,"튜토리얼 졸업"],[150,"서류 돌파"],[280,"면접 생존자"],[450,"중간 보스"],[650,"최종 보스 도전"],[900,"입사 보스 격파"]];
+const BADGES=[
+ ["🌱","첫 지원",c=>c.apps>=1],["📮","지원 5곳",c=>c.apps>=5],["🎤","면접 진출",c=>c.iv>=1],["🏆","최종 합격",c=>c.ok>=1],
+ ["📚","공부 10시간",c=>c.h>=10],["🧠","공부 50시간",c=>c.h>=50],["🔥","3일 연속",c=>c.maxStk>=3],["⚡","7일 연속",c=>c.maxStk>=7],
+ ["✅","미션 5개",c=>c.ms>=5],["🎯","미션 10개",c=>c.ms>=10],["⭐","Lv.3 달성",c=>c.lv>=2],["👑","Lv.5 달성",c=>c.lv>=4]];
+function M(id,cat,title,xp,target,auto,weekly){return {id,cat,title,xp,target:target||1,auto:auto||null,weekly:!!weekly}}
+function mkSets(){
+  const common=p=>[
+    M(p+"9","지원","게임회사 5곳 목록 만들기",20,5,{k:"apps_total"}),
+    M(p+"10","지원","이력서·자소서 작성",30),
+    M(p+"11","지원","주 3곳 지원",40,3,{k:"apps_week"},true),
+    M(p+"12","면접","모의면접 3회",40,3),
+    M(p+"13","면접","회사별 질문 정리",20)];
+  const g=p=>[M(p+"6","게임 분석","지원사 게임 직접 플레이",20),M(p+"8","게임 분석","신작 게임 리뷰",20)];
+  return {
+    dev:[M("d1","포트폴리오","대표 프로젝트 3개 완성",40,3),M("d2","포트폴리오","플레이 영상 올리기",20),M("d3","포트폴리오","깃허브 정리",20),
+      M("d4","직무 공부","엔진(Unity/Unreal) 기능 구현",30),M("d5","직무 공부","코테 주 5시간",30,5,{k:"study_week",cat:"코테"},true),
+      ...g("d"),M("d7","게임 분석","기획서 1장 쓰기",30),...common("d")],
+    plan:[M("p1","포트폴리오","기획서 3개 완성",40,3),M("p2","포트폴리오","기획 포트폴리오 PDF 정리",20),M("p3","포트폴리오","포트폴리오 사이트 만들기",20),
+      M("p4","직무 공부","밸런스 시트 1개 만들기",30),M("p5","직무 공부","레벨·시스템 기획 1개",30),
+      ...g("p"),M("p7","게임 분석","게임 분석 보고서 1장",30),...common("p")],
+    art:[M("a1","포트폴리오","대표 작품 5점 완성",40,5),M("a2","포트폴리오","아트스테이션 업로드",20),M("a3","포트폴리오","작업 과정 영상 올리기",20),
+      M("a4","직무 공부","툴 하나 익히기 (블렌더 등)",30),M("a5","직무 공부","작업 주 5시간",30,5,{k:"study_week",cat:"포트폴리오"},true),
+      ...g("a"),M("a7","게임 분석","지원사 아트 스타일 분석 1장",30),...common("a")]};
+}
+function ensure(s){if(!s.sets)s.sets=mkSets();if(!s.role)s.role="dev";if(!s.earned)s.earned={};if(!s.prog)s.prog={};if(!s.act)s.act=[];return s}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.apps)return ensure(s)}catch(e){}
+  const s=sample();s.prog={"대표 프로젝트 3개 완성":1,"깃허브 정리":1,"이력서·자소서 작성":1,"모의면접 3회":2};s.act=[0,1,2,3].map(i=>addDays(-i));return ensure(s)}
 let S=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function getTheme(){try{return localStorage.getItem(TKEY)}catch(e){return null}}
 function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem(TKEY,t)}catch(e){}$("#theme").textContent=t==="dark"?"☀️ 라이트":"🌙 다크"}
 setTheme(getTheme()||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+
+// ---- 미션 로직 ----
+const curSet=()=>S.sets[S.role]||[];
+const wkStart=()=>{const x=new Date();const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);x.setHours(0,0,0,0);return x};
+function autoVal(m){const wk=wkStart();
+  if(m.auto.k==="apps_total")return S.apps.length;
+  if(m.auto.k==="apps_week")return S.apps.filter(a=>parse(a.date)>=wk).length;
+  if(m.auto.k==="study_week")return S.study.filter(s=>parse(s.date)>=wk&&s.cat===m.auto.cat).reduce((a,s)=>a+s.h,0);
+  return 0}
+function mstate(m){const val=m.auto?autoVal(m):(S.prog[m.title]||0);return {val,target:m.target,done:val>=m.target}}
+const mkey=m=>m.weekly?m.title+"@"+fmt(wkStart()):m.title;
+function reconcile(){const gained=[];
+  curSet().forEach(m=>{const st=mstate(m),k=mkey(m);
+    if(st.done){if(!S.earned[k]){S.earned[k]={xp:m.xp,t:fmt(today())};gained.push(m)}}
+    else if(!m.auto&&S.earned[k])delete S.earned[k]});
+  return gained}
+const xpTotal=()=>Object.values(S.earned).reduce((a,e)=>a+e.xp,0);
+const lvIdx=x=>{let i=0;LEVELS.forEach((l,n)=>{if(x>=l[0])i=n});return i};
+function streaks(){const set=new Set(S.act);const d=today();if(!set.has(fmt(d)))d.setDate(d.getDate()-1);
+  let cur=0;while(set.has(fmt(d))){cur++;d.setDate(d.getDate()-1)}
+  const ds=[...set].sort();let best=0,run=0,prev=null;
+  ds.forEach(s=>{const t=parse(s);run=prev&&Math.round((t-prev)/864e5)===1?run+1:1;prev=t;if(run>best)best=run});
+  return {cur,best}}
+function addAct(){const t=fmt(today());if(!S.act.includes(t)){S.act.push(t);S.act=S.act.slice(-120)}}
+let toastT=null;
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2400)}
+function renderBoard(){
+  const xp=xpTotal(),li=lvIdx(xp),cur=LEVELS[li][0],nxt=LEVELS[li+1];
+  $("#lvN").textContent="Lv."+(li+1);$("#lvName").textContent=LEVELS[li][1];
+  $("#xpFill").style.width=(nxt?Math.round((xp-cur)/(nxt[0]-cur)*100):100)+"%";
+  $("#xpTxt").textContent=nxt?"다음 레벨까지 "+(nxt[0]-xp)+" XP":"최고 레벨 달성!";
+  const sk=streaks();$("#stk").textContent=sk.cur;$("#xpT").textContent=xp;
+  const set=curSet();const ms=Object.keys(S.earned).length;$("#msd").textContent=ms;
+  const groups=[];set.forEach(m=>{let g=groups.find(x=>x.c===m.cat);if(!g){g={c:m.cat,l:[]};groups.push(g)}g.l.push(m)});
+  $("#missions").innerHTML=groups.map(g=>`<div class="mgrp"><h4>${esc(g.c)}</h4>`+g.l.map(m=>{
+    const st=mstate(m),pct=Math.min(100,Math.round(st.val/st.target*100)),vv=Math.round(st.val*10)/10;
+    let ctl;
+    if(m.auto)ctl=`<span title="기록으로 자동 계산">🤖</span>`;
+    else if(m.target>1)ctl=`<span class="cnt"><button data-m="dec" data-id="${m.id}">−</button><button data-m="inc" data-id="${m.id}">+</button></span>`;
+    else ctl=`<button class="chk" data-m="tog" data-id="${m.id}">${st.done?"✅":"⬜"}</button>`;
+    const prog=m.target>1?`<div class="mini"><i style="width:${pct}%"></i></div>`:"";
+    return `<div class="mrow${st.done?" done":""}">${ctl}<div class="grow"><span class="mt">${esc(m.title)}</span>${m.target>1?` <small>${vv}/${m.target}${m.weekly?" · 주간":""}</small>`:m.weekly?" <small>주간</small>":""}${prog}</div><span class="xp">+${m.xp}</span><button class="x" data-m="del" data-id="${m.id}" title="삭제">✕</button></div>`}).join("")+`</div>`).join("")||'<div class="empty">미션이 없습니다</div>';
+  const c={apps:S.apps.length,iv:S.apps.filter(a=>["면접","최종","합격"].includes(a.st)).length,ok:S.apps.filter(a=>a.st==="합격").length,
+    h:S.study.reduce((a,s)=>a+s.h,0),maxStk:sk.best,ms,lv:li};
+  const got=BADGES.filter(b=>b[2](c)).length;$("#bcnt").textContent=got+"/"+BADGES.length;
+  $("#badges").innerHTML=BADGES.map(b=>`<div class="bd${b[2](c)?"":" lock"}"><span class="ic">${b[0]}</span>${b[1]}</div>`).join("");
+  $("#role").innerHTML=Object.keys(ROLES).map(k=>`<option value="${k}"${k===S.role?" selected":""}>${ROLES[k]} 미션</option>`).join("");
+  const cs=$("#fMis [name=cat]");if(!cs.options.length)MCATS.forEach(x=>cs.add(new Option(x,x)));
+}
 
 // selects
 ST.forEach(s=>$("#fApp [name=st]").add(new Option(s,s)));
@@ -247,6 +382,7 @@ function baseOpts(extra){
 function mondayOf(d){const x=new Date(d);const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);x.setHours(0,0,0,0);return x}
 
 function render(){
+  renderBoard();
   $("#banner").hidden=!S.sample;
   const apps=S.apps.slice().sort((a,b)=>b.date.localeCompare(a.date));
   const total=apps.length;
@@ -309,7 +445,24 @@ function render(){
     <button class="x" data-del="events" data-id="${e.id}" title="삭제">✕</button></div>`}).join(""):'<div class="empty">일정이 없습니다</div>';
 }
 
-function touch(){S.sample=false;S.updated=Date.now();save();render();schedule()}
+function touch(act){
+  const b=xpTotal(),bl=lvIdx(b);
+  if(act!==false)addAct();
+  S.sample=false;S.updated=Date.now();
+  const g=reconcile();save();render();schedule();
+  if(g.length){const a=xpTotal();toast(lvIdx(a)>bl?"🎉 LEVEL UP! Lv."+(lvIdx(a)+1)+" "+LEVELS[lvIdx(a)][1]:"✨ 미션 완료! +"+(a-b)+" XP")}
+}
+$("#fMis").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);const t=Math.max(1,parseInt(f.get("target"))||1);
+  curSet().push(M("c"+id(),f.get("cat"),f.get("title").trim(),parseInt(f.get("xp")),t));e.target.title.value="";e.target.target.value=1;touch(false)};
+$("#role").onchange=e=>{S.role=e.target.value;touch(false)};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;
+  const m=curSet().find(x=>x.id===b.dataset.id);if(!m)return;const a=b.dataset.m;
+  if(a==="del"){if(!confirm("이 미션을 삭제할까요?"))return;S.sets[S.role]=curSet().filter(x=>x!==m);touch(false);return}
+  const v=S.prog[m.title]||0;
+  if(a==="tog")S.prog[m.title]=v>=1?0:1;
+  if(a==="inc")S.prog[m.title]=Math.min(m.target,v+1);
+  if(a==="dec")S.prog[m.title]=Math.max(0,v-1);
+  touch()});
 $("#fApp").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
   S.apps.push({id:id(),co:f.get("co").trim(),job:f.get("job").trim(),date:f.get("date"),st:f.get("st"),memo:f.get("memo").trim()});
   e.target.co.value="";e.target.job.value="";e.target.memo.value="";touch()};
@@ -318,18 +471,18 @@ $("#fStudy").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
 $("#fEv").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
   S.events.push({id:id(),title:f.get("title").trim(),date:f.get("date"),type:f.get("type")});e.target.title.value="";touch()};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;
-  S[b.dataset.del]=S[b.dataset.del].filter(x=>x.id!=b.dataset.id);touch()});
+  S[b.dataset.del]=S[b.dataset.del].filter(x=>x.id!=b.dataset.id);touch(false)});
 document.addEventListener("change",e=>{if(e.target.classList.contains("st")){
   S.apps.find(a=>a.id==e.target.dataset.id).st=e.target.value;touch()}});
 $("#goal").onchange=e=>{const v=parseFloat(e.target.value);if(v>0){S.goal=v;touch()}};
-$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S={sample:false,goal:S.goal,apps:[],study:[],events:[],updated:Date.now()};save();render();schedule()}};
+$("#clear").onclick=()=>{if(confirm("샘플 데이터를 모두 지울까요?")){S=ensure({sample:false,goal:S.goal,apps:[],study:[],events:[],sets:S.sets,role:S.role,updated:Date.now()});reconcile();save();render();schedule()}};
 $("#theme").onclick=()=>{setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");render()};
 $("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:"application/json"}));a.download="job-dashboard-"+fmt(today())+".json";a.click()};
 $("#imp").onclick=()=>$("#file").click();
 $("#file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.apps||!d.study||!d.events)throw 0;S=Object.assign({goal:20},d,{sample:false,updated:Date.now()});save();render();schedule()}catch(x){alert("올바른 백업 파일이 아닙니다")}};
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.apps||!d.study||!d.events)throw 0;S=ensure(Object.assign({goal:20},d,{sample:false,updated:Date.now()}));reconcile();save();render();schedule()}catch(x){alert("올바른 백업 파일이 아닙니다")}};
   r.readAsText(f);e.target.value=""};
-render();
+reconcile();render();
 
 // ---- 동기화 (Firestore REST) ----
 const FB={key:"AIzaSyCylgdEDb2WQXQE1Hmb8EyJ4yy-E8Cda6k",pid:"job-dashboard-sync-8f523"};
@@ -356,7 +509,7 @@ async function syncNow(){
   if(!code||busy)return;busy=true;
   try{
     const r=await pull();const lu=S.updated||0,ru=r?(r.updated||0):-1;
-    if(r&&ru>lu){S=Object.assign({goal:20},r,{sample:false});save();render()}
+    if(r&&ru>lu){S=ensure(Object.assign({goal:20},r,{sample:false}));reconcile();save();render()}
     else if(!S.sample&&lu>ru){await push()}
     status("동기화됨 "+nowStr());
   }catch(e){status("연결 실패 · 인터넷을 확인하세요")}
